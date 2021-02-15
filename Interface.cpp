@@ -45,6 +45,8 @@ float Interface::getTemperature()
 
 void Interface::clockPage()
 {
+  const int _BLINK = 60;
+  const int _INTERVAL = 350;
   Time _t = this->klok.time();
   this->lcd.clear();
   
@@ -59,13 +61,12 @@ void Interface::clockPage()
     if(_t.date < 10) {this->lcd.print("0");}
     this->lcd.print(_t.date);
   }
-
   else 
   {
-    if(this->clockBlinkTimer.ifTimePassed(500))
+    if(this->clockBlinkTimer.ifTimePassed(_INTERVAL))
     {
     this->lcd.print("00");  
-    delay(80);
+    delay(_BLINK);
     }
   }
   
@@ -76,16 +77,42 @@ void Interface::clockPage()
     if(_t.mon < 10) {this->lcd.print("0");}
     this->lcd.print(_t.mon);
   }
+
+  else if(!this->monthSet && !this->daySet || !this->monthSet && this->daySet && !this->segmentOneSet )
+  {
+    if(_t.mon < 10) {this->lcd.print("0");}
+    this->lcd.print(_t.mon);  
+  }
+  
+  else if(!this->monthSet && this->daySet && this->segmentOneSet)
+  {
+    if(this->clockBlinkTimer.ifTimePassed(_INTERVAL))
+    {
+    this->lcd.print("00");  
+    delay(_BLINK);
+    }
+  }
   this->lcd.setCursor(8, 0);
   this->lcd.print("-");
   if (this->yearSet)
   {
     this->lcd.print(_t.yr);
   }
-  else 
+  else if(!this->yearSet && !this->monthSet || !this->yearSet && this->monthSet && !this->segmentTwoSet)
   {
-    this->lcd.print("20");
+    this->lcd.print(_t.yr);
   }
+  
+  else if(!this->yearSet && this->monthSet && this->segmentTwoSet)
+  {
+    this->lcd.print("20"); 
+    if(this->clockBlinkTimer.ifTimePassed(_INTERVAL))
+    {
+    this->lcd.print("00");  
+    delay(_BLINK);
+    }
+  }
+  
   this->lcd.setCursor(6, 1);
   if (this->hourSet)
     {
@@ -94,6 +121,23 @@ void Interface::clockPage()
       this->lcd.print("0");
     }
     this->lcd.print(_t.hr);
+  }
+
+  else if(!this->hourSet && !this->yearSet || !this->hourSet && this->yearSet && !this->segmentThreeSet)
+  {
+    if(_t.hr < 10) 
+    {
+      this->lcd.print("0");
+    }
+    this->lcd.print(_t.hr);
+  }
+  else if(!this->hourSet && this->yearSet && this->segmentThreeSet)
+  {
+    if(this->clockBlinkTimer.ifTimePassed(_INTERVAL))
+    {
+    this->lcd.print("00");  
+    delay(_BLINK);
+    }
   }
   this->lcd.setCursor(8, 1);
   this->lcd.print(":");
@@ -105,8 +149,30 @@ void Interface::clockPage()
     }
     this->lcd.print(_t.min);
   }
+  else if(!this->minuteSet && !this->hourSet || !this->minuteSet && this->hourSet && !this->segmentFourSet)
+  {
+    if(_t.min < 10) 
+    {
+      this->lcd.print("0");
+    }
+    this->lcd.print(_t.min);
+  }
+  else if(!this->minuteSet && this->hourSet && this->segmentFourSet)
+  {
+    if(this->clockBlinkTimer.ifTimePassed(_INTERVAL))
+    {
+    this->lcd.print("00");  
+    delay(_BLINK);
+    }
+  }
+
+  if(this->segmentFiveSet)
+  {
+    this->lcd.setCursor(13, 1);
+    this->lcd.print("OK?");
+  }
   
-  delay(70);
+  delay(40);
 }
 
 void Interface::weatherPage()
@@ -248,6 +314,16 @@ void Interface::checkButtons()
 {
   if(this->menuButton.isPushed()) 
   {this->menuButton.index++;}
+
+  if(this->menuButton.staysPushed(3))
+  {
+    this->lcd.clear();
+    this->lcd.setCursor(0,0);
+    this->lcd.print("Pressed for 3Sec");
+    this->lcd.setCursor(0, 1);
+    this->lcd.print("Pausing for 5Sec");
+    delay(5000);
+  }
   
   if(this->powerButton.isPushed()) 
   {this->powerButton.index++;}
@@ -268,7 +344,7 @@ void Interface::setTime()
   int _index = 0;
   uint16_t _digits[10] = {11, 11, 11, 11, 11, 11, 11, 11, 11, 11}; //each element stands for a digit to be set DD-MM-YY HH-MM.
   
-  while(this->timeBeingSet && _index < 10)
+  while(this->timeBeingSet || _index < 11)
   {    
     this->clockPage();
 
@@ -330,6 +406,7 @@ void Interface::setTime()
        
        case Remote::POWERBUTTON:
        this->timeBeingSet = false;
+       _index = 100;
        break;
 
        case Remote::NEXTSEGMENT:
@@ -383,6 +460,10 @@ void Interface::setTime()
         case 9:
         _index = 10;
         this->minuteSet = true; 
+        break;
+
+        case 10:
+        _index = 11;
         break;
 
         default:
@@ -452,6 +533,11 @@ void Interface::setTime()
         _index = 8;  
         break;
 
+        case 11:
+        this->minuteSet = false;
+        _index = 8;
+        break;
+
         default:
         break;
        }
@@ -463,6 +549,14 @@ void Interface::setTime()
       
     switch(_index)
     {
+      case 0:
+      this->segmentOneSet = false;
+      this->segmentTwoSet = false;
+      this->segmentThreeSet = false;
+      this->segmentFourSet = false;
+      this->segmentFiveSet = false;
+      break;
+      
       case 1:
       this->daySet = true;
       this->monthSet = false;
@@ -472,15 +566,25 @@ void Interface::setTime()
       
       _t.date = _digits[0];
       this->klok.time(_t);
+
+      this->segmentOneSet = false;
+      this->segmentTwoSet = false;
+      this->segmentThreeSet = false;
+      this->segmentFourSet = false;
+      this->segmentFiveSet = false;
       break;
 
       case 2:
       if(_digits[0] < 10 && _digits[1] < 10)
       {
        _t.date = (_digits[0] * 10) + _digits[1]; // if the digit has been set it will run this, otherwise it will pass. 
-      }
-      
+      }      
       this->klok.time(_t);
+      this->segmentOneSet = true;
+      this->segmentTwoSet = false;
+      this->segmentThreeSet = false;
+      this->segmentFourSet = false;
+      this->segmentFiveSet = false;
       break;
 
       case 3:
@@ -490,6 +594,11 @@ void Interface::setTime()
       this->minuteSet = false;
       _t.mon = _digits[2];
       this->klok.time(_t);
+      this->segmentOneSet = true;
+      this->segmentTwoSet = false;
+      this->segmentThreeSet = false;
+      this->segmentFourSet = false;
+      this->segmentFiveSet = false;
       break;
 
       case 4:
@@ -498,6 +607,11 @@ void Interface::setTime()
       _t.mon = (_digits[2] * 10) + _digits[3];
       }
       this->klok.time(_t);
+      this->segmentOneSet = true;
+      this->segmentTwoSet = true;
+      this->segmentThreeSet = false;
+      this->segmentFourSet = false;
+      this->segmentFiveSet = false;
       break;
 
       case 5:
@@ -506,6 +620,11 @@ void Interface::setTime()
       this->minuteSet = false;
       _t.yr = _digits[4] + 2000;
       this->klok.time(_t);
+      this->segmentOneSet = true;
+      this->segmentTwoSet = true;
+      this->segmentThreeSet = false;
+      this->segmentFourSet = false;
+      this->segmentFiveSet = false;
       break;
 
       case 6:
@@ -514,6 +633,11 @@ void Interface::setTime()
       _t.yr = 2000 + (_digits[4] * 10) + _digits[5];
       }
       this->klok.time(_t);
+      this->segmentOneSet = true;
+      this->segmentTwoSet = true;
+      this->segmentThreeSet = true;
+      this->segmentFourSet = false;
+      this->segmentFiveSet = false;
       break;
 
       case 7:
@@ -521,6 +645,11 @@ void Interface::setTime()
       this->minuteSet = false;
       _t.hr = _digits[6];
       this->klok.time(_t);
+      this->segmentOneSet = true;
+      this->segmentTwoSet = true;
+      this->segmentThreeSet = true;
+      this->segmentFourSet = false;
+      this->segmentFiveSet = false;
       break;
 
       case 8:
@@ -529,12 +658,23 @@ void Interface::setTime()
       _t.hr = (_digits[6] * 10) + _digits[7];
       }
       this->klok.time(_t);
+      this->segmentOneSet = true;
+      this->segmentTwoSet = true;
+      this->segmentThreeSet = true;
+      this->segmentFourSet = true;
+      this->segmentFiveSet = false;
       break;
 
       case 9:
       this->minuteSet = true;
       _t.min = _digits[8];
       this->klok.time(_t);
+      
+      this->segmentOneSet = true;
+      this->segmentTwoSet = true;
+      this->segmentThreeSet = true;
+      this->segmentFourSet = true;
+      this->segmentFiveSet = false;
       break;
 
       case 10:
@@ -543,9 +683,22 @@ void Interface::setTime()
       _t.min = (_digits[8] * 10) + _digits[9];
       }
       this->klok.time(_t);
-      this->timeBeingSet = false;
+      this->segmentOneSet = true;
+      this->segmentTwoSet = true;
+      this->segmentThreeSet = true;
+      this->segmentFourSet = true;
+      this->segmentFiveSet = true;
       break;
 
+      case 11:      
+      this->timeBeingSet = false;
+      this->segmentOneSet = true;
+      this->segmentTwoSet = true;
+      this->segmentThreeSet = true;
+      this->segmentFourSet = true;
+      this->segmentFiveSet = true;
+      break;
+      
       default:
       break;
     }
@@ -559,6 +712,12 @@ void Interface::setTime()
   this->daySet = true;
   this->hourSet = true;
   this->minuteSet = true;
+
+  this->segmentOneSet = false;
+  this->segmentTwoSet = false;
+  this->segmentThreeSet = false;
+  this->segmentFourSet = false;
+  this->segmentFiveSet = false;
 }
 
 void Interface::menu()
