@@ -41,34 +41,40 @@ private:
 //sets a variable to hold the remote signal
   unsigned long tempSignal = 0x00000;
 
+//So the clock knows what to display when setting the time
   bool timeBeingSet = false;
   bool yearSet = true;
+  bool segmentOneSet = false;
   bool monthSet = true;
+  bool segmentTwoSet = false;
   bool daySet = true;
+  bool segmentThreeSet = false;
   bool hourSet = true;
+  bool segmentFourSet = false;
   bool minuteSet = true;
+  bool segmentFiveSet = false;
   
 private:  
   String dayOfWeek(const Time::Day day);  //currently not used
   
   float getHumidity();
   float getTemperature();
-  
+
+  //pages
   void clockPage();
   void weatherPage();
   void mainPage();
   void setTime();
-  void timerPage(int _hours, int _minutes, int _seconds, bool _secondsSet);
+  void timerPage(int _hours, int _minutes, int _seconds, bool _secondsSet); // what is displayed for the user when running setUserTime();
+  void menu();
+  void setUserTimer(); // Timer Page
 
 //checks for remote signal and responds appropiatly
   void checkSignal();
 
 //checks if backlight of lcd needs to be on or off and responds appropiatly
-  void checkButtons();
   void checkPowerButton();
-  
-  void menu();
-  void setUserTimer();
+  void checkButtons();
 
 private:
   Adafruit_BME280 bme; 
