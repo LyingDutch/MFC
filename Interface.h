@@ -5,6 +5,7 @@
 #include <DS1302.h>
 #include <IRremote.h>
 #include "Button.h"
+#include "Timer.h"
 
 namespace LDKlok
 {
@@ -12,25 +13,25 @@ class Interface
 {
 private:  
 //lcd pinouts
-  const int rs = 7;
-  const int en = 8;
-  const int d4 = 9;
-  const int d5 = 10;
-  const int d6 = 11;
-  const int d7 = 12;
-  const int bLight = 13;
+  const int RS = 7;
+  const int EN = 8;
+  const int D4 = 9;
+  const int D5 = 10;
+  const int D6 = 11;
+  const int D7 = 12;
+  const int BACKLIGHTPIN = 13;
 
 //bme pinouts
-  const int kSclk = 6;
-  const int kIo = 5;
-  const int kCe = 4;
+  const int KSCLK = 6;
+  const int KIO = 5;
+  const int KCE = 4;
 
 //infared pinout
-  int IRpin = 3;
+  int IRPIN = 3;
 
 //button pins
-  const int menuButtonPin = 14;
-  const int powerButtonPin = 16;
+  const int MENUBUTTONPIN = 14;
+  const int POWERBUTTONPIN = 16;
   
   float humidity;
   float temperature;
@@ -57,6 +58,7 @@ private:
   void weatherPage();
   void mainPage();
   void setTime();
+  void timerPage(int _hours, int _minutes, int _seconds, bool _secondsSet);
 
 //checks for remote signal and responds appropiatly
   void checkSignal();
@@ -64,6 +66,9 @@ private:
 //checks if backlight of lcd needs to be on or off and responds appropiatly
   void checkButtons();
   void checkPowerButton();
+  
+  void menu();
+  void setUserTimer();
 
 private:
   Adafruit_BME280 bme; 
@@ -73,10 +78,12 @@ private:
   LiquidCrystal lcd;
   Button menuButton;
   Button powerButton;
+  Timer::Timer clockBlinkTimer;
+  Timer::Timer userTimer;
 
 public:  
   Interface():
-    klok(DS1302(kCe, kIo, kSclk)), IR(IRrecv(IRpin)), lcd(LiquidCrystal(rs, en, d4, d5, d6, d7)), menuButton(Button(menuButtonPin, 3)), powerButton(Button(powerButtonPin, 2)) 
+    klok(DS1302(KCE, KIO, KSCLK)), IR(IRrecv(IRPIN)), lcd(LiquidCrystal(RS, EN, D4, D5, D6, D7)), menuButton(Button(MENUBUTTONPIN, 3)), powerButton(Button(POWERBUTTONPIN, 2)) 
     {
       /*Time t(2021, 2, 11, 21, 16, 20, 4);
       klok.time(t);                             // Set Time Trough Code 
