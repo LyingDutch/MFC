@@ -43,6 +43,105 @@ float Interface::getHumidity()
 float Interface::getTemperature()
 {this->temperature = this->bme.readTemperature()-1,3;}
 
+bool Interface::checkSelection(bool& _arg1, bool& _arg2, bool& _segmentSet, Time& _t, int _selection)
+{
+  if(_selection == 0)
+  {
+    this->lcd.setCursor(3, 0);
+    if (this->daySet)
+    {
+      if(_t.date < 10) {this->lcd.print("0");}
+      this->lcd.print(_t.date);
+    }
+    
+   else 
+   {
+     if(this->clockBlinkTimer.ifTimePassed(350))
+     {
+      if(_t.date < 10) {this->lcd.print("0");}
+      this->lcd.print(_t.date);
+      delay(60);
+      }
+    }
+  }
+  
+  else if (_arg1) // if first digit has been set, print the value
+  {
+    switch(_selection)
+    {
+      case 1:
+      if(_t.mon < 10) {this->lcd.print("0");}
+      this->lcd.print(_t.mon);
+      break;
+
+      case 2:
+      if(_t.hr < 10) {this->lcd.print("0");}
+      this->lcd.print(_t.hr);
+      break;
+
+      case 3:
+      if(_t.min < 10) {this->lcd.print("0");}
+      this->lcd.print(_t.min);
+      break;
+
+      default:
+      break;      
+    }
+  }
+  
+  else if(!_arg1 && !_arg2 || !_arg1 && _arg2 && !_segmentSet) // if no digits of the previous of current selection is filled in, or if the current selection has no digit filled in, but the first of the previous is, but not the second part of the digit
+  {
+    switch(_selection)
+    {
+      case 1:
+      if(_t.mon < 10) {this->lcd.print("0");}
+      this->lcd.print(_t.mon);
+      break;
+
+      case 2:
+      if(_t.hr < 10) {this->lcd.print("0");}
+      this->lcd.print(_t.hr);
+      break;
+
+      case 3:
+      if(_t.min < 10) {this->lcd.print("0");}
+      this->lcd.print(_t.min);
+      break;
+
+      default:
+      break;      
+    }
+  }    
+
+  else if(!_arg1 && _arg2 && _segmentSet) //current first digit not filled in, but the full previous digit is.
+  {
+    if(this->clockBlinkTimer.ifTimePassed(350))
+    {
+     switch(_selection)
+    {
+      case 1:
+      if(_t.mon < 10) {this->lcd.print("0");}
+      this->lcd.print(_t.mon);
+      break;
+
+      case 2:
+      if(_t.hr < 10) {this->lcd.print("0");}
+      this->lcd.print(_t.hr);
+      break;
+
+      case 3:
+      if(_t.min < 10) {this->lcd.print("0");}
+      this->lcd.print(_t.min);
+      break;
+
+      default:
+      break;      
+    }
+    delay(60);
+    }
+  }
+}
+
 void Interface::clockPage()
 {
   const int _BLINK = 60;
@@ -55,45 +154,15 @@ void Interface::clockPage()
     this->lcd.setCursor(0, 0); 
     this->lcd.print("X");
   }
-  this->lcd.setCursor(3, 0);
-  if (this->daySet)
-  {
-    if(_t.date < 10) {this->lcd.print("0");}
-    this->lcd.print(_t.date);
-  }
-  else 
-  {
-    if(this->clockBlinkTimer.ifTimePassed(_INTERVAL))
-    {
-    this->lcd.print("00");  
-    delay(_BLINK);
-    }
-  }
   
+  this->lcd.setCursor(3, 0);
+  this->checkSelection(this->daySet, this->daySet, this->daySet, _t, 0); // arg here dont matter, only for _selection 0 (day) there is a special path in the function
   this->lcd.setCursor(5, 0);
   this->lcd.print("-");
-  if (this->monthSet)
-  {
-    if(_t.mon < 10) {this->lcd.print("0");}
-    this->lcd.print(_t.mon);
-  }
-
-  else if(!this->monthSet && !this->daySet || !this->monthSet && this->daySet && !this->segmentOneSet )
-  {
-    if(_t.mon < 10) {this->lcd.print("0");}
-    this->lcd.print(_t.mon);  
-  }
-  
-  else if(!this->monthSet && this->daySet && this->segmentOneSet)
-  {
-    if(this->clockBlinkTimer.ifTimePassed(_INTERVAL))
-    {
-    this->lcd.print("00");  
-    delay(_BLINK);
-    }
-  }
+  this->checkSelection(this->monthSet, this->daySet, this->segmentOneSet, _t, 1);  
   this->lcd.setCursor(8, 0);
   this->lcd.print("-");
+  
   if (this->yearSet)
   {
     this->lcd.print(_t.yr);
@@ -105,67 +174,20 @@ void Interface::clockPage()
   
   else if(!this->yearSet && this->monthSet && this->segmentTwoSet)
   {
+    int _year = _t.yr - 2000;
     this->lcd.print("20"); 
     if(this->clockBlinkTimer.ifTimePassed(_INTERVAL))
     {
-    this->lcd.print("00");  
+    this->lcd.print(_year);  
     delay(_BLINK);
     }
-  }
-  
-  this->lcd.setCursor(6, 1);
-  if (this->hourSet)
-    {
-    if(_t.hr < 10) 
-    {
-      this->lcd.print("0");
-    }
-    this->lcd.print(_t.hr);
   }
 
-  else if(!this->hourSet && !this->yearSet || !this->hourSet && this->yearSet && !this->segmentThreeSet)
-  {
-    if(_t.hr < 10) 
-    {
-      this->lcd.print("0");
-    }
-    this->lcd.print(_t.hr);
-  }
-  else if(!this->hourSet && this->yearSet && this->segmentThreeSet)
-  {
-    if(this->clockBlinkTimer.ifTimePassed(_INTERVAL))
-    {
-    this->lcd.print("00");  
-    delay(_BLINK);
-    }
-  }
+  this->lcd.setCursor(6, 1);
+  this->checkSelection(this->hourSet, this->yearSet, this->segmentThreeSet, _t, 2);
   this->lcd.setCursor(8, 1);
   this->lcd.print(":");
-  if (this->minuteSet)
-  {
-    if(_t.min < 10) 
-    {
-      this->lcd.print("0");
-    }
-    this->lcd.print(_t.min);
-  }
-  else if(!this->minuteSet && !this->hourSet || !this->minuteSet && this->hourSet && !this->segmentFourSet)
-  {
-    if(_t.min < 10) 
-    {
-      this->lcd.print("0");
-    }
-    this->lcd.print(_t.min);
-  }
-  else if(!this->minuteSet && this->hourSet && this->segmentFourSet)
-  {
-    if(this->clockBlinkTimer.ifTimePassed(_INTERVAL))
-    {
-    this->lcd.print("00");  
-    delay(_BLINK);
-    }
-  }
-
+  this->checkSelection(this->minuteSet, this->hourSet, this->segmentFourSet, _t, 3);
   if(this->segmentFiveSet)
   {
     this->lcd.setCursor(13, 1);
@@ -257,7 +279,7 @@ void Interface::checkSignal()
   }    
 }
 
-//check menu button _index and sets the right page to be run
+//check menu button index and sets the right page to be run
 void Interface::runPage()
 {
   this->checkSignal();  
@@ -739,19 +761,42 @@ void Interface::menu()
       break;
 
       case 1:
+      if(this->goingDown)
+      {
       this->lcd.clear();
       this->lcd.setCursor(6, 0);
       this->lcd.print("Home");
       this->lcd.setCursor(3,1);
       this->lcd.print(">Set Time<"); 
+      }
+      else if(this->goingUp)
+      {
+      this->lcd.clear();
+      this->lcd.setCursor(3,0);
+      this->lcd.print(">Set Time<"); 
+      this->lcd.setCursor(5, 1);
+      this->lcd.print("Alarm");
+      }
       break;
       
       case 2:
+      if(this->goingDown)
+      {
+      this->lcd.clear();
+      this->lcd.setCursor(4,0);
+      this->lcd.print("Set Time"); 
+      this->lcd.setCursor(4, 1);
+      this->lcd.print(">Alarm<");
+      }
+      else if(this->goingUp)
+      {
       this->lcd.clear();
       this->lcd.setCursor(4, 0);
       this->lcd.print(">Alarm<");
       this->lcd.setCursor(5,1);
       this->lcd.print("Timer"); 
+      }
+      
       break;
 
       case 3:
@@ -799,10 +844,14 @@ void Interface::menu()
       break;
 
       case Remote::N8:
+      this->goingDown = true;
+      this->goingUp = false;
       _index++;
       break;
 
       case Remote::N2:
+      this->goingUp = true;
+      this->goingDown = false;
       _index--;
       break;
 
