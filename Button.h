@@ -1,48 +1,26 @@
 #pragma once
+#include "Timer.h"
 
 namespace LDKlok
 {
 class Button
 {
+private:
+    Timer::Timer pushTimer;
+      
 public:
     int index, lastState, currentState;
     const int pin;
 
 public:
-   Button(const int _pin, int _index):
-      pin(_pin), index(_index) {}
+   Button(const int _pin):
+      pin(_pin) {}
       
-   bool isReleased()
-   {
-     lastState = currentState; 
-     currentState = digitalRead(pin); 
- 
-     if(lastState == 0 && currentState == 1) 
-     {return true;} 
-  
-    return false;
-   }
-
-   bool isPushed()
-   {
-     lastState = currentState; 
-     currentState = digitalRead(pin); 
- 
-     if(lastState == 1 && currentState == 0) 
-     {return true;} 
-  
-    return false;
-   }
-
-   bool staysPushed()
-   {
-     lastState = currentState; 
-     currentState = digitalRead(pin); 
- 
-     if(lastState == 0 && currentState == 0) 
-     {return true;} 
-  
-      return false;
-   }
-};
+   Button(const int _pin, int _startingIndex):
+      pin(_pin), index(_startingIndex) {}
+      
+   bool isReleased();
+   bool isPushed();
+   bool staysPushed(int _forSeconds);
+ };
 }
