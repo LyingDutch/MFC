@@ -41,6 +41,10 @@ private:
 //sets a variable to hold the remote signal
   unsigned long tempSignal = 0x00000;
 
+//holds the direction user is going in the menu
+  bool goingUp = false;
+  bool goingDown = false;
+
 //So the clock knows what to display when setting the time
   bool timeBeingSet = false;
   bool yearSet = true;
@@ -53,6 +57,9 @@ private:
   bool segmentFourSet = false;
   bool minuteSet = true;
   bool segmentFiveSet = false;
+
+//function to make the clockPage more readable and easier to adjust
+  bool checkSelection(bool& _arg1, bool& _arg2, bool& _segmentSet, Time& _t, int _selection);
   
 private:  
   String dayOfWeek(const Time::Day day);  //currently not used
